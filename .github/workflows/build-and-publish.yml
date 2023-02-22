@@ -1,0 +1,51 @@
+name: Build and publish
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  push:
+    branches: [master]
+
+env:
+  IMAGE_NAME: ubuntu-occt-cgal-eigen-node
+  UBUNTU_VERSION: 22.04
+  OCCT_VERSION: 7.7.0
+  CGAL_VERSION: 5.5.1
+  EIGEN_VERSION: 3.4.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        node: [16, 18]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          build-args: |
+            node_version=${{ matrix.node }}
+            ubuntu_version=${{ env.UBUNTU_VERSION }}
+            occt_version=${{ env.OCCT_VERSION }}
+            cgal_version=${{ env.CGAL_VERSION }}
+            eigen_version=${{ env.EIGEN_VERSION }}
+          tags: |
+            ghcr.io/michsior14/${{ env.IMAGE_NAME }}:node-${{matrix.node}}
+            ghcr.io/michsior14/${{ env.IMAGE_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
