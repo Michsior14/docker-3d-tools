@@ -9,7 +9,7 @@ on:
 env:
   IMAGE_NAME: ubuntu-occt-cgal-eigen-node
   UBUNTU_VERSION: 22.04
-  OCCT_VERSION: 7.7.0
+  OCCT_VERSION: 7.7.1
   CGAL_VERSION: 5.5.2
   EIGEN_VERSION: 3.4.0
 
