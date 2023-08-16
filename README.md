@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/Michsior14/ubuntu-occt-cgal-eigen-node/actions/workflows/build-and-publish.yml/badge.svg)
 
-Docker image of ubuntu with [opencascade](https://git.dev.opencascade.org/gitweb/?p=occt.git), [cgal](https://github.com/CGAL/cgal), [eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) and node.
+Docker image of ubuntu with [opencascade](https://git.dev.opencascade.org/gitweb/?p=occt.git), [cgal](https://github.com/CGAL/cgal), [eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) and [node](https://nodejs.org).
 
 ## Supported tags
 
