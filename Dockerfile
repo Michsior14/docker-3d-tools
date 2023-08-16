@@ -1,7 +1,7 @@
 ARG ubuntu_version=22.04
 ARG node_version=18
-ARG occt_version=7.7.1
-ARG cgal_version=5.5.2
+ARG occt_version=7.7.2
+ARG cgal_version=5.6
 ARG eigen_version=3.4.0
 
 # Conda temporary image
