@@ -18,6 +18,7 @@ RUN conda install -y cgal-cpp=$cgal_version occt=$occt_version eigen=$eigen_vers
 # Target image
 FROM "ubuntu:$ubuntu_version"
 ARG node_version
+ARG nvm_version
 ARG conda_path=/opt/conda
 ARG local_dir=/usr/local
 ARG nvm_dir=$local_dir/nvm
