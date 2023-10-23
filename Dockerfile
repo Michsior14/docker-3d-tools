@@ -1,8 +1,9 @@
 ARG ubuntu_version=22.04
-ARG node_version=18
+ARG node_version=20
 ARG occt_version=7.7.2
 ARG cgal_version=5.6
 ARG eigen_version=3.4.0
+ARG nvm_version=0.39.5
 
 # Conda temporary image
 FROM continuumio/miniconda3:latest as conda
@@ -30,7 +31,7 @@ RUN apt-get update && apt-get install -y curl \
 # Install nvm and node
 ENV NVM_DIR $nvm_dir
 RUN mkdir $nvm_dir
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash \
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_version/install.sh | bash \
   && . $nvm_dir/nvm.sh \
   && nvm install $node_version \
   && nvm alias default $node_version \

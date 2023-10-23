@@ -12,6 +12,7 @@ env:
   OCCT_VERSION: 7.7.2
   CGAL_VERSION: 5.6
   EIGEN_VERSION: 3.4.0
+  NVM_VERSION: 0.39.5
 
 jobs:
   build:
@@ -22,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        node: [16, 18]
+        node: [18, 20]
 
     steps:
       - name: Checkout repository
@@ -46,6 +47,7 @@ jobs:
             occt_version=${{ env.OCCT_VERSION }}
             cgal_version=${{ env.CGAL_VERSION }}
             eigen_version=${{ env.EIGEN_VERSION }}
+            nvm_version=${{ env.NVM_VERSION }}
           tags: |
             ghcr.io/michsior14/${{ env.IMAGE_NAME }}:node-${{matrix.node}}
             ghcr.io/michsior14/${{ env.IMAGE_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
