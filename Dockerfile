@@ -1,9 +1,9 @@
 ARG ubuntu_version=22.04
 ARG node_version=20
-ARG occt_version=7.7.2
+ARG occt_version=7.8.0
 ARG cgal_version=5.6
 ARG eigen_version=3.4.0
-ARG nvm_version=0.39.5
+ARG nvm_version=0.39.7
 
 # Conda temporary image
 FROM continuumio/miniconda3:latest as conda
