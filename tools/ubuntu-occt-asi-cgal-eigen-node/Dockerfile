@@ -58,7 +58,6 @@ RUN cmake .. \
   -DUSE_RAPIDJSON=on \
   -DUSE_MOBIUS=off \
   -DUSE_INSTANT_MESHES=off \
-  -DUSE_INSTANT_MESHES=off \
   -DUSE_NETGEN=off \
   -DUSE_THREADING=off
 RUN make -j8
