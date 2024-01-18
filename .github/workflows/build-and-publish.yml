@@ -43,7 +43,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./tools/${{ env.IMAGE_NAME }}}
           push: true
           build-args: |
             node_version=${{ matrix.node }}
@@ -85,7 +85,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./tools/${{ env.IMAGE_NAME }}}
           push: true
           build-args: |
             node_version=${{ matrix.node }}
