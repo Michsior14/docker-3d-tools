@@ -3,12 +3,13 @@ ARG node_version=20
 ARG occt_version=7.7.2
 ARG cgal_version=5.6
 ARG eigen_version=3.4.0
-ARG nvm_version=0.39.5
+ARG nvm_version=0.39.7
 
 # Conda temporary image
 FROM continuumio/miniconda3:latest as conda
 ARG cgal_version
 ARG occt_version
+ARG eigen_version
 
 ENV PATH /opt/conda/bin:$PATH
 
