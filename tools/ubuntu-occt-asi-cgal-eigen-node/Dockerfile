@@ -1,19 +1,30 @@
 ARG ubuntu_version=22.04
 ARG node_version=20
-ARG occt_version=7.7.2
+ARG occt_version=7.8.1
 ARG cgal_version=5.6.1
 ARG eigen_version=3.4.0
 ARG nvm_version=0.39.7
-ARG rapidjson_version=1.1.0
-ARG asi_version=2024.1
+ARG rapidjson_version="1.1.0=hdb19cb5_1"
+ARG asi_version=fc7818a4
+ARG asi_version_mode=commit
+
+# Conditional setup of the asi version based on commit or release
+FROM continuumio/miniconda3:latest as build-base
+
+FROM build-base as build-release
+ARG asi_version
+ONBUILD ENV ASI_VERSION v${asi_version}
+
+FROM build-base as build-commit
+ARG asi_version
+ONBUILD ENV ASI_VERSION ${asi_version}
 
 # Conda temporary image
-FROM continuumio/miniconda3:latest as conda
+FROM build-${asi_version_mode} as conda
 ARG cgal_version
 ARG occt_version
 ARG eigen_version
 ARG rapidjson_version
-ARG asi_version
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -32,8 +43,8 @@ WORKDIR /sources
 
 # Build Analysis Situs
 RUN mkdir /sources/analysis-situs
-RUN wget https://gitlab.com/ssv/AnalysisSitus/-/archive/v$asi_version/AnalysisSitus-v$asi_version.tar.gz
-RUN tar zxvf AnalysisSitus-v$asi_version.tar.gz --strip-components=1 -C /sources/analysis-situs
+RUN wget https://gitlab.com/ssv/AnalysisSitus/-/archive/$ASI_VERSION/AnalysisSitus-$ASI_VERSION.tar.gz
+RUN tar zxvf AnalysisSitus-$ASI_VERSION.tar.gz --strip-components=1 -C /sources/analysis-situs
 
 WORKDIR /sources/analysis-situs
 
@@ -60,8 +71,8 @@ RUN cmake .. \
   -DUSE_INSTANT_MESHES=off \
   -DUSE_NETGEN=off \
   -DUSE_THREADING=off
-RUN make -j8
-RUN make -j8 install
+RUN make -j $(nproc)
+RUN make -j $(nproc) install
 
 # Target image
 FROM "ubuntu:$ubuntu_version"

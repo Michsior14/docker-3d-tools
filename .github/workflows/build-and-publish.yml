@@ -11,8 +11,9 @@ env:
   OCCT_VERSION: 7.8.1
   CGAL_VERSION: 5.6.1
   EIGEN_VERSION: 3.4.0
-  ASI_VERSION: 2024.1
-  RAPIDJSON_VERSION: 1.1.0
+  ASI_VERSION: fc7818a4
+  ASI_VERSION_MODE: commit
+  RAPIDJSON_VERSION: "1.1.0=hdb19cb5_1"
   NVM_VERSION: 0.39.7
 
 jobs:
@@ -24,7 +25,6 @@ jobs:
 
     env:
       IMAGE_NAME: ubuntu-occt-asi-cgal-eigen-node
-      OCCT_VERSION: 7.7.2
 
     strategy:
       matrix:
@@ -55,8 +55,9 @@ jobs:
             nvm_version=${{ env.NVM_VERSION }}
             rapidjson_version=${{ env.RAPIDJSON_VERSION }}
             asi_version=${{ env.ASI_VERSION }}
+            asi_version_mode=${{ env.ASI_VERSION_MODE }}
           tags: |
-            ghcr.io/michsior14/${{ env.IMAGE_NAME }}:node-${{matrix.node}}
+            ghcr.io/michsior14/${{ env.IMAGE_NAME }}:node-${{matrix.node}}${{ env.ASI_VERSION_MODE == 'commit' && format('-{0}', env.ASI_VERSION) || ''}}
             ghcr.io/michsior14/${{ env.IMAGE_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-asi-${{ env.ASI_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
 
   build-ubuntu-occt-cgal-eigen-node:
