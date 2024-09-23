@@ -60,9 +60,10 @@ jobs:
         with:
           context: ./tools/${{ env.IMAGE_NAME }}
           platforms: ${{ matrix.platform }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=image,name=${{ env.AIS_REPOSITORY_NAME }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ env.IMAGE_NAME}}-${{ github.ref_name }}-${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ env.IMAGE_NAME }}-${{ github.ref_name }}-${{ matrix.platform }},mode=max
+          outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          tags: ${{  env.AIS_REPOSITORY_NAME }}
           build-args: |
             node_version=${{ matrix.node }}
             ubuntu_version=${{ env.UBUNTU_VERSION }}
@@ -168,9 +169,10 @@ jobs:
         with:
           context: ./tools/${{ env.IMAGE_NAME }}
           platforms: ${{ matrix.platform }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=image,name=${{ env.REPOSITORY_NAME }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ env.IMAGE_NAME}}-${{ github.ref_name }}-${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ env.IMAGE_NAME }}-${{ github.ref_name }}-${{ matrix.platform }},mode=max
+          outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          tags: ${{  env.REPOSITORY_NAME }}
           build-args: |
             node_version=${{ matrix.node }}
             ubuntu_version=${{ env.UBUNTU_VERSION }}
