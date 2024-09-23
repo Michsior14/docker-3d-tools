@@ -73,9 +73,6 @@ jobs:
             rapidjson_version=${{ env.RAPIDJSON_VERSION }}
             asi_version=${{ env.ASI_VERSION }}
             asi_version_mode=${{ env.ASI_VERSION_MODE }}
-          tags: |
-            ${{ env.AIS_REPOSITORY_NAME }}:node-${{matrix.node}}${{ env.ASI_VERSION_MODE == 'commit' && format('-{0}', env.ASI_VERSION) || ''}}
-            ${{ env.AIS_REPOSITORY_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-asi-${{ env.ASI_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
 
       - name: Export digest
         run: |
@@ -123,7 +120,9 @@ jobs:
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.AIS_REPOSITORY_NAME }}@sha256:%s ' *)
+            $(printf '${{ env.AIS_REPOSITORY_NAME }}@sha256:%s ' *) \
+            -t ${{ env.AIS_REPOSITORY_NAME }}:node-${{matrix.node}}${{ env.ASI_VERSION_MODE == 'commit' && format('-{0}', env.ASI_VERSION) || ''}} \
+            -t ${{ env.AIS_REPOSITORY_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-asi-${{ env.ASI_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
 
       - name: Inspect image
         run: |
@@ -179,9 +178,6 @@ jobs:
             cgal_version=${{ env.CGAL_VERSION }}
             eigen_version=${{ env.EIGEN_VERSION }}
             nvm_version=${{ env.NVM_VERSION }}
-          tags: |
-            ${{ env.REPOSITORY_NAME }}:node-${{matrix.node}}
-            ${{ env.REPOSITORY_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
 
       - name: Export digest
         run: |
@@ -229,7 +225,9 @@ jobs:
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REPOSITORY_NAME }}@sha256:%s ' *)
+            $(printf '${{ env.REPOSITORY_NAME }}@sha256:%s ' *) \
+            -t ${{ env.REPOSITORY_NAME }}:node-${{matrix.node}} \
+            -t ${{ env.REPOSITORY_NAME }}:${{ env.UBUNTU_VERSION }}-occt-${{ env.OCCT_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
 
       - name: Inspect image
         run: |
