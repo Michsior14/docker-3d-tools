@@ -22,6 +22,9 @@ env:
 jobs:
   build-ubuntu-occt-asi-cgal-eigen-node:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       fail-fast: false
@@ -93,6 +96,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-ubuntu-occt-asi-cgal-eigen-node
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       fail-fast: false
@@ -131,6 +137,9 @@ jobs:
 
   build-ubuntu-occt-cgal-eigen-node:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       fail-fast: false
@@ -199,6 +208,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-ubuntu-occt-cgal-eigen-node
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       fail-fast: false
