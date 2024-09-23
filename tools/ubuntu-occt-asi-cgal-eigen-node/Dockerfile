@@ -4,23 +4,23 @@ ARG occt_version=7.8.1
 ARG cgal_version=5.6.1
 ARG eigen_version=3.4.0
 ARG nvm_version=0.39.7
-ARG rapidjson_version="1.1.0=hdb19cb5_1"
+ARG rapidjson_version=1.1.0
 ARG asi_version=fc7818a4
 ARG asi_version_mode=commit
 
 # Conditional setup of the asi version based on commit or release
-FROM continuumio/miniconda3:latest as build-base
+FROM continuumio/miniconda3 AS build-base
 
-FROM build-base as build-release
+FROM build-base AS build-release
 ARG asi_version
 ONBUILD ENV ASI_VERSION v${asi_version}
 
-FROM build-base as build-commit
+FROM build-base AS build-commit
 ARG asi_version
 ONBUILD ENV ASI_VERSION ${asi_version}
 
 # Conda temporary image
-FROM build-${asi_version_mode} as conda
+FROM build-${asi_version_mode} AS conda
 ARG cgal_version
 ARG occt_version
 ARG eigen_version
@@ -36,7 +36,8 @@ RUN apt-get update -q && \
   && rm -rf /var/lib/apt/lists/*
 
 # Install conda packages
-RUN conda install -y cgal-cpp=$cgal_version occt=$occt_version eigen=$eigen_version rapidjson=$rapidjson_version --channel conda-forge
+RUN conda config --add channels conda-forge
+RUN conda install -y cgal-cpp=$cgal_version occt=$occt_version eigen=$eigen_version anaconda::rapidjson=$rapidjson_version
 
 RUN mkdir /sources
 WORKDIR /sources

@@ -6,7 +6,7 @@ ARG eigen_version=3.4.0
 ARG nvm_version=0.39.7
 
 # Conda temporary image
-FROM continuumio/miniconda3:latest as conda
+FROM continuumio/miniconda3 AS conda
 ARG cgal_version
 ARG occt_version
 ARG eigen_version
@@ -14,7 +14,8 @@ ARG eigen_version
 ENV PATH /opt/conda/bin:$PATH
 
 # Install conda packages
-RUN conda install -y cgal-cpp=$cgal_version occt=$occt_version eigen=$eigen_version --channel conda-forge
+RUN conda config --add channels conda-forge
+RUN conda install -y cgal-cpp=$cgal_version occt=$occt_version eigen=$eigen_version
 
 # Target image
 FROM "ubuntu:$ubuntu_version"
