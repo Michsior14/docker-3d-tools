@@ -27,6 +27,7 @@ jobs:
       IMAGE_NAME: ubuntu-occt-asi-cgal-eigen-node
 
     strategy:
+      max-parallel: 1
       matrix:
         node: [18, 20]
 
@@ -79,6 +80,7 @@ jobs:
       IMAGE_NAME: ubuntu-occt-cgal-eigen-node
 
     strategy:
+      max-parallel: 1
       matrix:
         node: [18, 20]
 
