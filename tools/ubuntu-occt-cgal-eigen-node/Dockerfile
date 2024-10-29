@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Install nvm and node
+ENV NVM_NODEJS_ORG_MIRROR=https://unencrypted.nodejs.org/download/release
 ENV NVM_DIR $nvm_dir
 RUN mkdir $nvm_dir
 RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_version/install.sh | bash \
@@ -42,7 +43,6 @@ RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_version/install.sh |
 
 # Create symlinks for newly installed node
 # with major version only support
-ENV NVM_NODEJS_ORG_MIRROR=https://unencrypted.nodejs.org/download
 RUN . $nvm_dir/nvm.sh \
   && current=$(nvm current) \
   && ln -s $nvm_dir/$current/lib/node_modules $nvm_link_node_modules \

@@ -90,7 +90,7 @@ RUN apt-get update && apt-get install -y curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Install nvm and node
-ENV NVM_NODEJS_ORG_MIRROR=https://unencrypted.nodejs.org/download
+ENV NVM_NODEJS_ORG_MIRROR=https://unencrypted.nodejs.org/download/release
 ENV NVM_DIR $nvm_dir
 RUN mkdir $nvm_dir
 RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_version/install.sh | bash \
