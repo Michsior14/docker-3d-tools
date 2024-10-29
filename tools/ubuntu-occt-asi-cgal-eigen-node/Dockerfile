@@ -1,9 +1,9 @@
 ARG ubuntu_version=22.04
-ARG node_version=20
+ARG node_version=22
 ARG occt_version=7.8.1
-ARG cgal_version=6.0
+ARG cgal_version=6.0.1
 ARG eigen_version=3.4.0
-ARG nvm_version=0.39.7
+ARG nvm_version=0.40.1
 ARG rapidjson_version=1.1.0
 ARG asi_version=fc7818a4
 ARG asi_version_mode=commit
