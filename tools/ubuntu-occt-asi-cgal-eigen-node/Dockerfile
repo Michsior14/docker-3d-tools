@@ -5,7 +5,7 @@ ARG cgal_version=6.0.1
 ARG eigen_version=3.4.0
 ARG nvm_version=0.40.1
 ARG rapidjson_version=1.1.0
-ARG asi_version=fc7818a4
+ARG asi_version=1097398d
 ARG asi_version_mode=commit
 
 # Conditional setup of the asi version based on commit or release
