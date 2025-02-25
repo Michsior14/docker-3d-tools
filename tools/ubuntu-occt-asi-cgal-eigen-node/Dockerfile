@@ -13,11 +13,11 @@ FROM continuumio/miniconda3 AS build-base
 
 FROM build-base AS build-release
 ARG asi_version
-ONBUILD ENV ASI_VERSION v${asi_version}
+ONBUILD ENV ASI_VERSION=v${asi_version}
 
 FROM build-base AS build-commit
 ARG asi_version
-ONBUILD ENV ASI_VERSION ${asi_version}
+ONBUILD ENV ASI_VERSION=${asi_version}
 
 # Conda temporary image
 FROM build-${asi_version_mode} AS conda
@@ -26,7 +26,7 @@ ARG occt_version
 ARG eigen_version
 ARG rapidjson_version
 
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH=/opt/conda/bin:$PATH
 
 RUN apt-get update -q && \
     apt-get install -q -y --no-install-recommends \
@@ -88,7 +88,7 @@ RUN apt-get update && apt-get install -y curl \
 
 # Install nvm and node
 ENV NVM_NODEJS_ORG_MIRROR=https://unencrypted.nodejs.org/download/release
-ENV NVM_DIR $nvm_dir
+ENV NVM_DIR=$nvm_dir
 RUN mkdir $nvm_dir
 RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_version/install.sh | bash \
     && . $nvm_dir/nvm.sh \
@@ -104,8 +104,8 @@ RUN . $nvm_dir/nvm.sh \
     && ln -s $nvm_dir/versions/node/$current/bin $nvm_link_path
 
 # Set environment variables
-ENV NODE_PATH $nvm_link_node_modules
-ENV PATH $nvm_link_path:$PATH
+ENV NODE_PATH=$nvm_link_node_modules
+ENV PATH=$nvm_link_path:$PATH
 
 # Install yarn
 RUN npm i -g yarn
