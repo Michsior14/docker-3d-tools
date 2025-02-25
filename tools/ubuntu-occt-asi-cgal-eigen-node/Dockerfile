@@ -32,6 +32,7 @@ RUN apt-get update -q && \
     apt-get install -q -y --no-install-recommends \
     build-essential \
     cmake \
+    libx11-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -48,10 +49,6 @@ RUN wget https://gitlab.com/ssv/AnalysisSitus/-/archive/$ASI_VERSION/AnalysisSit
 RUN tar zxvf AnalysisSitus-$ASI_VERSION.tar.gz --strip-components=1 -C /sources/analysis-situs
 
 WORKDIR /sources/analysis-situs
-
-# Adjust cmake for rapidjson
-RUN sed -i 's/ FORCE)/)/g' ./cmake/asitus_Rapidjson.cmake
-RUN cat ./cmake/asitus_Rapidjson.cmake
 
 RUN mkdir -p build
 
