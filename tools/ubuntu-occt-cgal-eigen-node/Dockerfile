@@ -1,7 +1,7 @@
 ARG ubuntu_version=22.04
 ARG node_version=22
 ARG occt_version=7.8.1
-ARG cgal_version=6.0.1
+ARG cgal_version=6.0.2
 ARG eigen_version=3.4.0
 ARG nvm_version=0.40.1
 
