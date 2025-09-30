@@ -7,14 +7,14 @@ on:
     branches: [master]
 
 env:
-  UBUNTU_VERSION: 22.04
+  UBUNTU_VERSION: 24.04
   OCCT_VERSION: 7.8.1
   CGAL_VERSION: 6.0.2
   EIGEN_VERSION: 3.4.0
   ASI_VERSION: 10013e2b
   ASI_VERSION_MODE: commit
   RAPIDJSON_VERSION: 1.1.0
-  NVM_VERSION: 0.40.1
+  NVM_VERSION: 0.40.3
 
   AIS_REPOSITORY_NAME: ghcr.io/michsior14/ubuntu-occt-asi-cgal-eigen-node
   REPOSITORY_NAME: ghcr.io/michsior14/ubuntu-occt-cgal-eigen-node
@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22]
+        node: [22, 24]
         platform: [linux/amd64, linux/arm64/v8]
 
     steps:
@@ -103,7 +103,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22]
+        node: [22, 24]
 
     steps:
       - name: Download digests
