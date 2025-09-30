@@ -8,8 +8,10 @@ Docker image of ubuntu with [opencascade](https://git.dev.opencascade.org/gitweb
 
 The latest tags:
 
-- 24.04-occt-7.8.1-cgal-6.0.2-eigen-3.4.0-node-24 (node-24)
-- 24.04-occt-7.8.1-cgal-6.0.2-eigen-3.4.0-node-22 (node-22)
+- 24.04-occt-7.8.1-cgal-6.0.2-eigen-3.4.0-node-24 (24.04-node-24)
+- 24.04-occt-7.8.1-cgal-6.0.2-eigen-3.4.0-node-22 (24.04-node-22)
+- 22.04-occt-7.8.1-cgal-6.0.2-eigen-3.4.0-node-24 (22.04-node-24)
+- 22.04-occt-7.8.1-cgal-6.0.2-eigen-3.4.0-node-22 (22.04-node-22)
 
 ## License
 
