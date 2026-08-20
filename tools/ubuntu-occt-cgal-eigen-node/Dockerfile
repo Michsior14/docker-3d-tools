@@ -27,8 +27,10 @@ ARG nvm_dir=$local_dir/nvm
 ARG nvm_link_node_modules=$local_dir/nvm-node-modules
 ARG nvm_link_path=$local_dir/nvm-path
 
-# Install curl
-RUN apt-get update && apt-get install -y curl \
+# Install curl and OpenMP
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install nvm and node
