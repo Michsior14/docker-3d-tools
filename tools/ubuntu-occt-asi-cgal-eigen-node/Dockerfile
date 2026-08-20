@@ -84,6 +84,7 @@ ARG nvm_link_path=$local_dir/nvm-path
 
 # Install curl and OpenMP
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     curl \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
