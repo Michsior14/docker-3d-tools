@@ -1,15 +1,15 @@
-ARG ubuntu_version=24.04
-ARG node_version=22
+ARG ubuntu_version=26.04
+ARG node_version=24
 ARG occt_version=7.8.1
 ARG cgal_version=6.0.2
 ARG eigen_version=3.4.0
-ARG nvm_version=0.40.3
 ARG rapidjson_version=1.1.0
 ARG asi_version=10013e2b
 ARG asi_version_mode=commit
+ARG micromamba_version=2.9.0-debian13
 
 # Conditional setup of the asi version based on commit or release
-FROM continuumio/miniconda3 AS build-base
+FROM mambaorg/micromamba:$micromamba_version AS build-base
 
 FROM build-base AS build-release
 ARG asi_version
@@ -26,19 +26,25 @@ ARG occt_version
 ARG eigen_version
 ARG rapidjson_version
 
-ENV PATH=/opt/conda/bin:$PATH
+USER root
 
 RUN apt-get update -q && \
     apt-get install -q -y --no-install-recommends \
     build-essential \
+    ca-certificates \
     cmake \
     libx11-dev \
+    wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install conda packages
-RUN conda config --add channels conda-forge
-RUN conda install -y cgal-cpp=$cgal_version occt=$occt_version eigen=$eigen_version anaconda::rapidjson=$rapidjson_version
+# Install conda packages into the (empty) base environment at /opt/conda
+RUN micromamba install -y -n base -c conda-forge \
+    cgal-cpp=$cgal_version \
+    occt=$occt_version \
+    eigen=$eigen_version \
+    anaconda::rapidjson=$rapidjson_version \
+    && micromamba clean -a -y
 
 RUN mkdir /sources
 WORKDIR /sources
@@ -75,12 +81,7 @@ RUN make -j $(nproc) install
 # Target image
 FROM "ubuntu:$ubuntu_version"
 ARG node_version
-ARG nvm_version
 ARG conda_path=/opt/conda
-ARG local_dir=/usr/local
-ARG nvm_dir=$local_dir/nvm
-ARG nvm_link_node_modules=$local_dir/nvm-node-modules
-ARG nvm_link_path=$local_dir/nvm-path
 
 # Install curl and OpenMP
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -89,31 +90,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install nvm and node
-ENV NVM_NODEJS_ORG_MIRROR=https://unencrypted.nodejs.org/download/release
-ENV NVM_DIR=$nvm_dir
-RUN mkdir $nvm_dir
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v$nvm_version/install.sh | bash \
-    && . $nvm_dir/nvm.sh \
-    && nvm install $node_version \
-    && nvm alias default $node_version \
-    && nvm use default
-
-# Create symlinks for newly installed node
-# with major version only support
-RUN . $nvm_dir/nvm.sh \
-    && current=$(nvm current) \
-    && ln -s $nvm_dir/$current/lib/node_modules $nvm_link_node_modules \
-    && ln -s $nvm_dir/versions/node/$current/bin $nvm_link_path
-
-# Set environment variables
-ENV NODE_PATH=$nvm_link_node_modules
-ENV PATH=$nvm_link_path:$PATH
+# Install the latest node release of the requested major version
+RUN set -eu \
+    && arch="$(dpkg --print-architecture)" \
+    && case "$arch" in \
+    amd64) node_arch=x64 ;; \
+    arm64) node_arch=arm64 ;; \
+    *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac \
+    && dist="https://nodejs.org/dist/latest-v$node_version.x" \
+    && cd /tmp \
+    && curl -fsSLO "$dist/SHASUMS256.txt" \
+    && file="$(grep -oE "node-v[0-9.]+-linux-$node_arch\.tar\.gz$" SHASUMS256.txt)" \
+    && curl -fsSLO "$dist/$file" \
+    && grep " $file\$" SHASUMS256.txt | sha256sum -c - \
+    && tar -xzf "$file" -C /usr/local --strip-components=1 --no-same-owner \
+    --exclude='*.md' --exclude=LICENSE \
+    && rm "$file" SHASUMS256.txt \
+    && node --version \
+    && npm --version
 
 # Install yarn
-RUN npm i -g yarn
+RUN npm i -g yarn && npm cache clean --force
 
 # Copy conda libraries
 COPY --from=conda $conda_path/include $conda_path/include
 COPY --from=conda $conda_path/lib $conda_path/lib
 COPY --from=conda $conda_path/share $conda_path/share
+
+# Register conda libraries with the dynamic linker (after system libraries)
+RUN echo "$conda_path/lib" > /etc/ld.so.conf.d/zz-conda.conf \
+    && ldconfig 2>/dev/null

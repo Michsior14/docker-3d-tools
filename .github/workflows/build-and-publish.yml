@@ -5,6 +5,12 @@ on:
     - cron: "0 0 1 * *"
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   OCCT_VERSION: 7.8.1
@@ -13,14 +19,14 @@ env:
   ASI_VERSION: 10013e2b
   ASI_VERSION_MODE: commit
   RAPIDJSON_VERSION: 1.1.0
-  NVM_VERSION: 0.40.3
 
-  AIS_REPOSITORY_NAME: ghcr.io/michsior14/ubuntu-occt-asi-cgal-eigen-node
-  REPOSITORY_NAME: ghcr.io/michsior14/ubuntu-occt-cgal-eigen-node
+  REGISTRY: ghcr.io/michsior14
+  ASI_IMAGE: ubuntu-occt-asi-cgal-eigen-node
 
 jobs:
-  build-ubuntu-occt-asi-cgal-eigen-node:
-    runs-on: ubuntu-22.04
+  build:
+    name: Build ${{ matrix.image }} (${{ matrix.ubuntu }}, node ${{ matrix.node }}, ${{ matrix.platform }})
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
       contents: read
       packages: write
@@ -28,74 +34,117 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu: [22.04, 24.04]
+        image: [ubuntu-occt-cgal-eigen-node, ubuntu-occt-asi-cgal-eigen-node]
+        ubuntu: ["24.04", "26.04"]
         node: [22, 24]
-        platform: [linux/amd64, linux/arm64/v8]
+        platform: [linux/amd64, linux/arm64]
 
     steps:
-      - name: Prepare envs
+      - name: Prepare
+        id: prep
         run: |
           platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          platform_pair=${platform//\//-}
 
-          image_name=${{ env.AIS_REPOSITORY_NAME }}
-          echo "IMAGE_NAME=${image_name//ghcr.io\/michsior14\///}" >> $GITHUB_ENV
+          {
+            echo "platform-pair=$platform_pair"
+            echo "cache-scope=${{ matrix.image }}-${{ matrix.ubuntu }}-node-${{ matrix.node }}-$platform_pair"
+            echo "build-args<<EOF"
+            echo "ubuntu_version=${{ matrix.ubuntu }}"
+            echo "node_version=${{ matrix.node }}"
+            echo "occt_version=${{ env.OCCT_VERSION }}"
+            echo "cgal_version=${{ env.CGAL_VERSION }}"
+            echo "eigen_version=${{ env.EIGEN_VERSION }}"
+            if [ "${{ matrix.image }}" = "${{ env.ASI_IMAGE }}" ]; then
+              echo "rapidjson_version=${{ env.RAPIDJSON_VERSION }}"
+              echo "asi_version=${{ env.ASI_VERSION }}"
+              echo "asi_version_mode=${{ env.ASI_VERSION_MODE }}"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Build test image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./tools/${{ matrix.image }}
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha,scope=${{ steps.prep.outputs.cache-scope }}
+          cache-to: type=gha,scope=${{ steps.prep.outputs.cache-scope }},mode=max
+          load: true
+          tags: ${{ matrix.image }}:test
+          build-args: ${{ steps.prep.outputs.build-args }}
+
+      - name: Smoke test
+        run: |
+          docker run --rm \
+            -e EXPECTED_NODE=${{ matrix.node }} \
+            -e IS_ASI=${{ matrix.image == env.ASI_IMAGE }} \
+            ${{ matrix.image }}:test bash -euo pipefail -c '
+              node --version | grep -q "^v${EXPECTED_NODE}\."
+              npm --version
+              yarn --version
+              test -d /opt/conda/include/opencascade
+              test -d /opt/conda/include/CGAL
+              test -d /opt/conda/include/eigen3
+              ldconfig -p | grep "libTKernel\.so" > /dev/null
+              libs=(/opt/conda/lib/libTK*.so)
+              if [ "$IS_ASI" = true ]; then
+                ldconfig -p | grep "libasiAlgo\.so" > /dev/null
+                libs+=(/opt/conda/lib/libasi*.so)
+              fi
+              missing=$(ldd "${libs[@]}" | grep "not found" || true)
+              if [ -n "$missing" ]; then echo "$missing"; exit 1; fi
+            '
+
       - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Push image by digest
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v7
         id: build
         with:
-          context: ./tools/${{ env.IMAGE_NAME }}
+          context: ./tools/${{ matrix.image }}
           platforms: ${{ matrix.platform }}
-          cache-from: type=gha,scope=${{ env.IMAGE_NAME}}-${{ github.ref_name }}-${{ matrix.platform }}
-          cache-to: type=gha,scope=${{ env.IMAGE_NAME }}-${{ github.ref_name }}-${{ matrix.platform }},mode=max
-          outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-          tags: ${{  env.AIS_REPOSITORY_NAME }}
-          build-args: |
-            node_version=${{ matrix.node }}
-            ubuntu_version=${{ matrix.ubuntu }}
-            occt_version=${{ env.OCCT_VERSION }}
-            cgal_version=${{ env.CGAL_VERSION }}
-            eigen_version=${{ env.EIGEN_VERSION }}
-            nvm_version=${{ env.NVM_VERSION }}
-            rapidjson_version=${{ env.RAPIDJSON_VERSION }}
-            asi_version=${{ env.ASI_VERSION }}
-            asi_version_mode=${{ env.ASI_VERSION_MODE }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: ${{ steps.prep.outputs.build-args }}
 
       - name: Export digest
+        if: github.event_name != 'pull_request'
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: digests-asi-${{matrix.ubuntu}}-${{matrix.node}}-${{ env.PLATFORM_PAIR }}
+          name: digests-${{ matrix.image }}-${{ matrix.ubuntu }}-${{ matrix.node }}-${{ steps.prep.outputs.platform-pair }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
-  merge-ubuntu-occt-asi-cgal-eigen-node:
-    runs-on: ubuntu-22.04
+  merge:
+    name: Publish ${{ matrix.image }} (${{ matrix.ubuntu }}, node ${{ matrix.node }})
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
     needs:
-      - build-ubuntu-occt-asi-cgal-eigen-node
+      - build
     permissions:
       contents: read
       packages: write
@@ -103,7 +152,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu: [22.04, 24.04]
+        image: [ubuntu-occt-cgal-eigen-node, ubuntu-occt-asi-cgal-eigen-node]
+        ubuntu: ["24.04", "26.04"]
         node: [22, 24]
 
     steps:
@@ -111,7 +161,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: /tmp/digests
-          pattern: digests-asi-${{matrix.ubuntu}}-${{matrix.node}}-*
+          pattern: digests-${{ matrix.image }}-${{ matrix.ubuntu }}-${{ matrix.node }}-*
           merge-multiple: true
 
       - name: Set up Docker Buildx
@@ -127,125 +177,28 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.AIS_REPOSITORY_NAME }}@sha256:%s ' *) \
-            -t ${{ env.AIS_REPOSITORY_NAME }}:${{ matrix.ubuntu }}-node-${{ matrix.node }}${{ env.ASI_VERSION_MODE == 'commit' && format('-{0}', env.ASI_VERSION) || ''}} \
-            -t ${{ env.AIS_REPOSITORY_NAME }}:${{ matrix.ubuntu }}-occt-${{ env.OCCT_VERSION }}-asi-${{ env.ASI_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
+          repo="${{ env.REGISTRY }}/${{ matrix.image }}"
+          ubuntu="${{ matrix.ubuntu }}"
+          node="${{ matrix.node }}"
+
+          if [ "${{ matrix.image }}" = "${{ env.ASI_IMAGE }}" ]; then
+            short="$ubuntu-node-$node"
+            if [ "${{ env.ASI_VERSION_MODE }}" = commit ]; then
+              short="$short-${{ env.ASI_VERSION }}"
+            fi
+            full="$ubuntu-occt-${{ env.OCCT_VERSION }}-asi-${{ env.ASI_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-$node"
+          else
+            short="$ubuntu-node-$node"
+            full="$ubuntu-occt-${{ env.OCCT_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-$node"
+          fi
+
+          digests=(*)
+          docker buildx imagetools create \
+            -t "$repo:$short" \
+            -t "$repo:$full" \
+            "${digests[@]/#/$repo@sha256:}"
+
+          echo "TAG=$repo:$short" >> "$GITHUB_ENV"
 
       - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.AIS_REPOSITORY_NAME }}:${{ matrix.ubuntu }}-node-${{ matrix.node }}${{ env.ASI_VERSION_MODE == 'commit' && format('-{0}', env.ASI_VERSION) || ''}}
-
-  build-ubuntu-occt-cgal-eigen-node:
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        ubuntu: [22.04, 24.04]
-        node: [22, 24]
-        platform: [linux/amd64, linux/arm64/v8]
-
-    steps:
-      - name: Prepare envs
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
-          image_name=${{ env.REPOSITORY_NAME }}
-          echo "IMAGE_NAME=${image_name//ghcr.io\/michsior14\///}" >> $GITHUB_ENV
-
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v7
-        id: build
-        with:
-          context: ./tools/${{ env.IMAGE_NAME }}
-          platforms: ${{ matrix.platform }}
-          cache-from: type=gha,scope=${{ env.IMAGE_NAME}}-${{ github.ref_name }}-${{ matrix.platform }}
-          cache-to: type=gha,scope=${{ env.IMAGE_NAME }}-${{ github.ref_name }}-${{ matrix.platform }},mode=max
-          outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-          tags: ${{ env.REPOSITORY_NAME }}
-          build-args: |
-            node_version=${{ matrix.node }}
-            ubuntu_version=${{ matrix.ubuntu }}
-            occt_version=${{ env.OCCT_VERSION }}
-            cgal_version=${{ env.CGAL_VERSION }}
-            eigen_version=${{ env.EIGEN_VERSION }}
-            nvm_version=${{ env.NVM_VERSION }}
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
-      - name: Upload digest
-        uses: actions/upload-artifact@v7
-        with:
-          name: digests-${{matrix.ubuntu}}-${{matrix.node}}-${{ env.PLATFORM_PAIR }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  merge-ubuntu-occt-cgal-eigen-node:
-    runs-on: ubuntu-22.04
-    needs:
-      - build-ubuntu-occt-cgal-eigen-node
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        ubuntu: [22.04, 24.04]
-        node: [22, 24]
-
-    steps:
-      - name: Download digests
-        uses: actions/download-artifact@v8
-        with:
-          path: /tmp/digests
-          pattern: digests-${{matrix.ubuntu}}-${{matrix.node}}-*
-          merge-multiple: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
-        run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REPOSITORY_NAME }}@sha256:%s ' *) \
-            -t ${{ env.REPOSITORY_NAME }}:${{ matrix.ubuntu }}-node-${{ matrix.node }} \
-            -t ${{ env.REPOSITORY_NAME }}:${{ matrix.ubuntu }}-occt-${{ env.OCCT_VERSION }}-cgal-${{ env.CGAL_VERSION }}-eigen-${{ env.EIGEN_VERSION }}-node-${{ matrix.node }}
-
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REPOSITORY_NAME }}:${{ matrix.ubuntu }}-node-${{ matrix.node }}
+        run: docker buildx imagetools inspect "$TAG"

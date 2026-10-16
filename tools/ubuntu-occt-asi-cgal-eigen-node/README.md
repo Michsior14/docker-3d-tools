@@ -8,10 +8,22 @@ Docker image of ubuntu with [opencascade](https://git.dev.opencascade.org/gitweb
 
 The latest tags:
 
+- 26.04-occt-7.8.1-asi-10013e2b-cgal-6.0.2-eigen-3.4.0-node-24 (26.04-node-24)
 - 24.04-occt-7.8.1-asi-10013e2b-cgal-6.0.2-eigen-3.4.0-node-24 (24.04-node-24)
+- 26.04-occt-7.8.1-asi-10013e2b-cgal-6.0.2-eigen-3.4.0-node-22 (26.04-node-22)
 - 24.04-occt-7.8.1-asi-10013e2b-cgal-6.0.2-eigen-3.4.0-node-22 (24.04-node-22)
-- 22.04-occt-7.8.1-asi-10013e2b-cgal-6.0.2-eigen-3.4.0-node-24 (22.04-node-24)
-- 22.04-occt-7.8.1-asi-10013e2b-cgal-6.0.2-eigen-3.4.0-node-22 (22.04-node-22)
+
+## Usage
+
+Libraries are installed in `/opt/conda` (headers in `/opt/conda/include`, shared
+libraries in `/opt/conda/lib`). The shared libraries are registered with the
+dynamic linker, so no `LD_LIBRARY_PATH` or rpath is needed at runtime, e.g. for
+node addons. When building, point the compiler and linker at them, e.g. in `binding.gyp`:
+
+```json
+"include_dirs": ["/opt/conda/include", "/opt/conda/include/opencascade"],
+"libraries": ["-L/opt/conda/lib", "-lTKernel", "-lTKMath", "-lasiAlgo"]
+```
 
 ## License
 
