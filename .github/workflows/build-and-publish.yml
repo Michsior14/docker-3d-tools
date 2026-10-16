@@ -142,7 +142,7 @@ jobs:
   merge:
     name: Publish ${{ matrix.image }} (${{ matrix.ubuntu }}, node ${{ matrix.node }})
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - build
     permissions:
