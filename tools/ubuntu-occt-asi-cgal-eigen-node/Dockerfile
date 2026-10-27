@@ -6,7 +6,7 @@ ARG eigen_version=3.4.0
 ARG rapidjson_version=1.1.0
 ARG asi_version=10013e2b
 ARG asi_version_mode=commit
-ARG micromamba_version=2.9.0-debian13
+ARG micromamba_version=2.10.0-debian13
 
 # Conditional setup of the asi version based on commit or release
 FROM mambaorg/micromamba:$micromamba_version AS build-base
