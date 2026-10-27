@@ -3,7 +3,7 @@ ARG node_version=24
 ARG occt_version=7.8.1
 ARG cgal_version=6.0.2
 ARG eigen_version=3.4.0
-ARG micromamba_version=2.9.0-debian13
+ARG micromamba_version=2.10.0-debian13
 
 # Conda temporary image
 FROM mambaorg/micromamba:$micromamba_version AS conda
