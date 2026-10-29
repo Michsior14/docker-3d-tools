@@ -1,5 +1,5 @@
 ARG ubuntu_version=26.04
-ARG node_version=24
+ARG node_version=26
 ARG occt_version=7.8.1
 ARG cgal_version=6.0.2
 ARG eigen_version=3.4.0
