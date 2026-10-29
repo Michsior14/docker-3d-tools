@@ -83,10 +83,11 @@ FROM "ubuntu:$ubuntu_version"
 ARG node_version
 ARG conda_path=/opt/conda
 
-# Install curl and OpenMP
+# Install curl, OpenMP and libatomic (required by node >= 26)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
+    libatomic1 \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
